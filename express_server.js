@@ -52,11 +52,17 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);      
 });
 
+// Redirects shortURL to longURL
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL
   const longURL = urlDatabase[shortURL];
   console.log(longURL);
   res.redirect(longURL);
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL]
+  res.redirect("/urls")
 });
 
 function generateRandomString() {
