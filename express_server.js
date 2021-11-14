@@ -156,8 +156,13 @@ if (!email || !password) {
   res.redirect('/urls/');
 })
 
-
+// Delete URL
 app.post("/urls/:shortURL/delete", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const userID = req.cookies["user_id"];
+  if (userID !== urlDatabase[shortURL].userID) {
+    return res.status(403).send("Error 403: You are unable to delete URL!");
+  }
   delete urlDatabase[req.params.shortURL]
   res.redirect("/urls")
 });
@@ -165,6 +170,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 // Edit URL
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
+  const userID = req.cookies["user_id"];
+  if (userID !== urlDatabase[shortURL].userID) {
+    return res.status(403).send("Error 403: You are unable to delete URL!");
+  }
   urlDatabase[shortURL].longURL = req.body.longURL;
   res.redirect(`/urls/${shortURL}`); 
 })
