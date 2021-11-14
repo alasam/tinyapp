@@ -3,6 +3,8 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
+
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
@@ -35,22 +37,22 @@ const users = {
 // Login check
 app.post("/login", (req, res) => {
   const checkEmail = req.body.email;
-  const checkPassword = req.body.password;
+  const userPassword = req.body.password;
   const user_id = checkUserEmails(checkEmail);
-  
   if (!user_id) {
     res.status(403).send("Error 403: Email not found!");
-  } else if (user_id && users[user_id].password !== checkPassword) {
+  }  else if (user_id && bcrypt.compareSync(userPassword, users[user_id].password)) {
+      res.cookie('user_id', user_id);
+      res.redirect(`/urls/`);
+  } else {
     res.status(403).send("Error 403: Incorrect Password!");
-  } 
-  res.cookie('user_id', user_id);
-  res.redirect(`/urls/`);
+  }
 });
 
 // Clear Cookie
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect(`/urls/`);
+  res.redirect(`/login`);
 });
 
 // Register new account page
@@ -107,10 +109,12 @@ app.get("/urls/new", (req, res) => {
 
 });
 
+// Get new short URL page
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const user_id = req.cookies["user_id"];
-  const templateVars = { shortURL, longURL: urlDatabase[shortURL].longURL, user_id: users[user_id] };
+  const longURL = urlDatabase[shortURL].longURL;
+  const templateVars = { shortURL, longURL, user_id: users[user_id] };
   res.render("urls_show", templateVars);
 });
 
@@ -139,7 +143,8 @@ app.get("/u/:shortURL", (req, res) => {
 app.post("/register", (req, res) => {
   const user_id = generateRandomString();
   const email = req.body.email;
-  const password = req.body.password;
+  const userPassword = req.body.password;
+  const password = bcrypt.hashSync(userPassword, 10);
 
 if (!email || !password) {
   res.status(400).send("Error 400: Please enter valid email/password");
