@@ -13,18 +13,18 @@
 
     <% if(user_id){ %>
       <label><%= user_id.email%>! </label>
+      <div class="navbar-nav">
         <form action="/logout" method="POST">
           <button font-size: 10px, type="submit" class="btn btn-primary">Logout</button>
         </form>
+        </div>
 
     <% } else{ %>  
-      <form class="form-inline" action="/login" method="POST">
-        <div class="form-group mb-2">
-          <label for="username">Enter a username:</label>
-          <input class="form-control" type="text" name="username" placeholder="Enter a username" style="width: 300px; margin: 1em">
-          <button type="submit" class="btn btn-primary">Submit</button>
-        </div>
-      </form>
+      <div class="navbar-nav">
+        <a class="nav-item nav-link" href="/register" style="margin: 1em">Register</a>
+        <a class="nav-item nav-link" href="/login" style="margin: 1em">Login</a>
+        
+      </div>
    <% } %>
 
 

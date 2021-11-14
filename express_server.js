@@ -26,10 +26,19 @@ const users = {
   }
 }
 
-// Submitting username
+// Login check
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  console.log(req.cookies);
+  const checkEmail = req.body.email;
+  const checkPassword = req.body.password;
+  const user_id = checkUserEmails(checkEmail);
+  
+  if (!user_id) {
+    res.status(403).send("Error 403: Email not found!");
+  } else if (user_id && users[user_id].password !== checkPassword) {
+    console.log(users[user_id].password, checkPassword)
+    res.status(403).send("Error 403: Incorrect Password!");
+  } 
+  res.cookie('user_id', user_id);
   res.redirect(`/urls/`);
 });
 
@@ -45,6 +54,13 @@ app.get("/register", (req, res) => {
   const user_id = req.cookies["user_id"];
   const templateVars = { user_id: users[user_id] };
   res.render("urls_register", templateVars);
+});
+
+// Login page
+app.get("/login", (req, res) => {
+  const user_id = req.cookies["user_id"];
+  const templateVars = { user_id: users[user_id] };
+  res.render("urls_login", templateVars);
 });
 
 
@@ -96,7 +112,7 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
-// Store registar data in users object
+// Store register data in users object
 app.post("/register", (req, res) => {
   const user_id = generateRandomString();
   const email = req.body.email;
