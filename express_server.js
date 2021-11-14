@@ -13,6 +13,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
 // Submitting username
 app.post("/login", (req, res) => {
   res.cookie("username", req.body.username);
@@ -22,14 +35,18 @@ app.post("/login", (req, res) => {
 
 // Clear Cookie
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   console.log(req.cookies);
   res.redirect(`/urls/`);
 });
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
+// Register new account page
+app.get("/register", (req, res) => {
+  const user_id = req.cookies["user_id"];
+  const templateVars = { user_id: users[user_id] };
+  res.render("urls_register", templateVars);
 });
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -39,26 +56,24 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+  const user_id = req.cookies["user_id"];
+  const templateVars = { urls: urlDatabase, user_id: users[user_id]};
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = {
-    username: req.cookies["username"]
-    // ... any other vars
-  };
+  const user_id = req.cookies["user_id"];
+  const templateVars =  {user_id: users[user_id] };
+
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const templateVars = { shortURL, longURL: urlDatabase[shortURL], username: req.cookies["username"]};
+  const user_id = req.cookies["user_id"];
+  const templateVars = { shortURL, longURL: urlDatabase[shortURL], user_id: users[user_id] };
   res.render("urls_show", templateVars);
 });
 
@@ -80,6 +95,27 @@ app.get("/u/:shortURL", (req, res) => {
   console.log(longURL);
   res.redirect(longURL);
 });
+
+// Store registar data in users object
+app.post("/register", (req, res) => {
+  const user_id = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+
+if (!email || !password) {
+  res.status(400).send("Error 400: Please enter valid email/password");
+} else if (checkUserEmails(email)) {
+  res.status(400).send("Error 400: Email already in use!");
+}
+
+  users[user_id] = {};
+  users[user_id]['id'] = user_id;
+  users[user_id]['email'] = email;
+  users[user_id]['password'] = password;
+  res.cookie("user_id", user_id);
+
+  res.redirect('/urls/');
+})
 
 
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -105,3 +141,12 @@ function generateRandomString() {
   return result;
 }
 
+function checkUserEmails (email)  {
+  for (let userDb in users) {
+    console.log(userDb)
+    if (users[userDb].email === email) {
+      return userDb;
+    }
+  }
+  return undefined;
+};
