@@ -11,20 +11,22 @@
       </div>
     </div>
 
-    <% if(user_id){ %>
-      <label><%= user_id.email%>! </label>
-      <div class="navbar-nav">
-        <form action="/logout" method="POST">
-          <button font-size: 10px, type="submit" class="btn btn-primary">Logout</button>
-        </form>
-        </div>
-
-    <% } else{ %>  
+    <% if(!user_id){ %>
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/register" style="margin: 1em">Register</a>
         <a class="nav-item nav-link" href="/login" style="margin: 1em">Login</a>
         
       </div>
+
+    <% } else{ %>  
+
+
+      <span class="navbar-text mr-sm-2">Signed in as:</span> <span class="navbar-text mr-sm-2" style='color: black;'><%= user_id.email%></span></span>
+      <div class="navbar-nav">
+        <form action="/logout" method="POST">
+          <button font-size: 10px, type="submit" class="btn btn-primary">Logout</button>
+        </form>
+        </div>
    <% } %>
 
 

@@ -1,5 +1,5 @@
+// Modules
 const { assert } = require('chai');
-
 const { checkUserEmails } = require('../helper.js');
 
 const testUsers = {
@@ -29,4 +29,4 @@ describe('checkUserEmails', function() {
    
   });  
 
-});
+});rs
