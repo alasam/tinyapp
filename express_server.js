@@ -2,13 +2,17 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session')
 const bcrypt = require('bcryptjs');
 
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ["key1", "key2"],
+
+}))
 
 const urlDatabase = {
   b6UTxQ: {
@@ -42,7 +46,7 @@ app.post("/login", (req, res) => {
   if (!user_id) {
     res.status(403).send("Error 403: Email not found!");
   }  else if (user_id && bcrypt.compareSync(userPassword, users[user_id].password)) {
-      res.cookie('user_id', user_id);
+    req.session.user_id = user_id;
       res.redirect(`/urls/`);
   } else {
     res.status(403).send("Error 403: Incorrect Password!");
@@ -51,26 +55,26 @@ app.post("/login", (req, res) => {
 
 // Clear Cookie
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null
   res.redirect(`/login`);
 });
 
 // Register new account page
 app.get("/register", (req, res) => {
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     res.redirect(`/urls/`)
   };
-  const user_id = req.cookies["user_id"];
+  const user_id = req.session.user_id;
   const templateVars = { user_id: users[user_id] };
   res.render("urls_register", templateVars);
 });
 
 // Login page
 app.get("/login", (req, res) => {
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     res.redirect(`/urls/`)
   };
-  const user_id = req.cookies["user_id"];
+  const user_id = req.session.user_id;
   const templateVars = { user_id: users[user_id] };
   res.render("urls_login", templateVars);
 });
@@ -86,10 +90,10 @@ app.get("/urls.json", (req, res) => {
 
 // Get Index page
 app.get("/urls", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     return res.send("You are not logged in! Please register or login before proceeding.");
   }
-  const user_id = req.cookies["user_id"];
+  const user_id = req.session.user_id;
   const userURL = urlsForUser(user_id);
   const templateVars = { urls: userURL, user_id: users[user_id]};
   
@@ -98,10 +102,10 @@ app.get("/urls", (req, res) => {
 
 // Get new URL
 app.get("/urls/new", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     res.redirect(`/login`)
   } else {
-    const user_id = req.cookies["user_id"];
+    const user_id = req.session.user_id;
     const templateVars =  {user_id: users[user_id] };
   
     res.render("urls_new", templateVars);
@@ -112,7 +116,7 @@ app.get("/urls/new", (req, res) => {
 // Get new short URL page
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const user_id = req.cookies["user_id"];
+  const user_id = req.session.user_id;
   const longURL = urlDatabase[shortURL].longURL;
   const templateVars = { shortURL, longURL, user_id: users[user_id] };
   res.render("urls_show", templateVars);
@@ -124,7 +128,7 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: req.body.longURL,
-    userID: req.cookies["user_id"]
+    userID: req.session.user_id
   };
   res.redirect(`/urls/${shortURL}`);      
 });
@@ -156,7 +160,7 @@ if (!email || !password) {
   users[user_id]['id'] = user_id;
   users[user_id]['email'] = email;
   users[user_id]['password'] = password;
-  res.cookie("user_id", user_id);
+  req.session.user_id = user_id;
 
   res.redirect('/urls/');
 })
@@ -164,7 +168,7 @@ if (!email || !password) {
 // Delete URL
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   if (userID !== urlDatabase[shortURL].userID) {
     return res.status(403).send("Error 403: You are unable to delete URL!");
   }
@@ -175,7 +179,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 // Edit URL
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   if (userID !== urlDatabase[shortURL].userID) {
     return res.status(403).send("Error 403: You are unable to delete URL!");
   }
