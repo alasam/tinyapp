@@ -14,6 +14,8 @@ app.use(cookieSession({
 
 }))
 
+const { checkUserEmails, urlsForUser, generateRandomString } = require('./helper');
+
 const urlDatabase = {
   b6UTxQ: {
       longURL: "https://www.tsn.ca",
@@ -42,7 +44,7 @@ const users = {
 app.post("/login", (req, res) => {
   const checkEmail = req.body.email;
   const userPassword = req.body.password;
-  const user_id = checkUserEmails(checkEmail);
+  const user_id = checkUserEmails(checkEmail, users);
   if (!user_id) {
     res.status(403).send("Error 403: Email not found!");
   }  else if (user_id && bcrypt.compareSync(userPassword, users[user_id].password)) {
@@ -94,7 +96,7 @@ app.get("/urls", (req, res) => {
     return res.send("You are not logged in! Please register or login before proceeding.");
   }
   const user_id = req.session.user_id;
-  const userURL = urlsForUser(user_id);
+  const userURL = urlsForUser(user_id, urlDatabase);
   const templateVars = { urls: userURL, user_id: users[user_id]};
   
   res.render("urls_index", templateVars);
@@ -152,7 +154,7 @@ app.post("/register", (req, res) => {
 
 if (!email || !password) {
   res.status(400).send("Error 400: Please enter valid email/password");
-} else if (checkUserEmails(email)) {
+} else if (checkUserEmails(email, users)) {
   res.status(400).send("Error 400: Email already in use!");
 }
 
@@ -185,34 +187,4 @@ app.post("/urls/:shortURL", (req, res) => {
   }
   urlDatabase[shortURL].longURL = req.body.longURL;
   res.redirect(`/urls/${shortURL}`); 
-})
-
-function generateRandomString() {
-  const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  const charactersLength = characters.length;
-  for ( let i = 0; i < 6; i++ ) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-
-  return result;
-}
-
-function checkUserEmails (email)  {
-  for (let userDb in users) {
-    if (users[userDb].email === email) {
-      return userDb;
-    }
-  }
-  return undefined;
-};
-
-function urlsForUser (id) {
-  const userDB = [];
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      userDB[url] = urlDatabase[url];
-    }
-  }
-  return userDB;
-}
+});
