@@ -148,12 +148,16 @@ app.get("/urls/:shortURL", (req, res) => {
 
 // New url submission page. URL will be given a randomize short url id, and added to the url Database. 
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = {
-    longURL: req.body.longURL,
-    userID: req.session.user_id
-  };
-  res.redirect(`/urls/${shortURL}`);
+  if (!req.session.user_id) {
+    res.redirect(`/login`);
+  } else {
+    const shortURL = generateRandomString();
+    urlDatabase[shortURL] = {
+      longURL: req.body.longURL,
+      userID: req.session.user_id
+    };
+    res.redirect(`/urls/${shortURL}`);
+  }
 });
 
 // Verifies the short url and redirects to corrisponding long url
@@ -173,8 +177,10 @@ app.post("/register", (req, res) => {
   const userPassword = req.body.password;
   const password = bcrypt.hashSync(userPassword, 10);
 
-  if (!email || !password) {
-    res.status(400).send("Error 400: Please enter valid email/password");
+  if (!email) {
+    res.status(400).send("Error 400: Please enter valid email!");
+  } else if (!userPassword) {
+    res.status(400).send("Error 400: Password cannot be blank!");
   } else if (checkUserEmails(email, users)) {
     res.status(400).send("Error 400: Email already in use!");
   }
@@ -199,7 +205,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-// EAssigned usl to be edit by user. If unassigned user tries to edit, error message.
+// Assigned url to be edit by user. If unassigned user tries to edit, error message.
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const userID = req.session.user_id;
