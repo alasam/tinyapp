@@ -173,25 +173,28 @@ app.get("/u/:shortURL", (req, res) => {
 // Registers user to randomly generated user ID, encrypts password, and stores data in users DB. If password/email is invalid or email already in use, error message.
 app.post("/register", (req, res) => {
   const user_id = generateRandomString();
-  const email = req.body.email;
-  const userPassword = req.body.password;
-  const password = bcrypt.hashSync(userPassword, 10);
-
-  if (!email) {
+  
+  if (!req.body.email) {
     res.status(400).send("Error 400: Please enter valid email!");
-  } else if (!userPassword) {
+  } else if (!req.body.password) {
     res.status(400).send("Error 400: Password cannot be blank!");
-  } else if (checkUserEmails(email, users)) {
+  } else if (checkUserEmails(req.body.email, users)) {
     res.status(400).send("Error 400: Email already in use!");
+  } else {
+    const email = req.body.email;
+    const userPassword = req.body.password;
+    const password = bcrypt.hashSync(userPassword, 10);
+  
+    users[user_id] = {};
+    users[user_id]['id'] = user_id;
+    users[user_id]['email'] = email;
+    users[user_id]['password'] = password;
+    req.session.user_id = user_id;
+  
+    res.redirect('/urls/');
   }
 
-  users[user_id] = {};
-  users[user_id]['id'] = user_id;
-  users[user_id]['email'] = email;
-  users[user_id]['password'] = password;
-  req.session.user_id = user_id;
 
-  res.redirect('/urls/');
 });
 
 // Assigned url to be deleted by user. If unassigned user tries to delete, error message.
